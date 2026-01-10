@@ -21,9 +21,9 @@ function App() {
       <main className="relative flex-1">
         <Hero />
         {mode === 'create' ? (
-          <CreateAccount />
+          <CreateAccount onSwitchMode={setMode} />
         ) : (
-          <Login role={selectedRole} />
+          <Login role={selectedRole} onSwitchMode={setMode} />
         )}
       </main>
       <Footer onSelectRole={handleSelectRole} />

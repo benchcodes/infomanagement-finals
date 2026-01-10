@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-const CreateAccount = () => {
+const CreateAccount = ({ onSwitchMode }) => {
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -22,6 +22,20 @@ const CreateAccount = () => {
 
   return (
     <div className="relative md:absolute top-auto md:top-1/2 left-1/2 md:left-auto md:right-24 lg:right-32 transform md:-translate-y-1/2 -translate-x-1/2 md:translate-x-0 bg-white border-3 border-black rounded-lg p-6 w-full max-w-md shadow-lg mx-4 md:mx-0">
+      <div className="flex justify-center gap-4 mb-4">
+        <button
+          onClick={() => onSwitchMode && onSwitchMode('create')}
+          className="px-4 py-2 font-semibold rounded-md bg-orange-600 text-white"
+        >
+          Create Account
+        </button>
+        <button
+          onClick={() => onSwitchMode && onSwitchMode('login')}
+          className="px-4 py-2 font-semibold rounded-md bg-white text-orange-600 border-2 border-orange-600"
+        >
+          Log In
+        </button>
+      </div>
         <h2 className="text-3xl font-bold text-center mb-8">CREATE ACCOUNT</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
