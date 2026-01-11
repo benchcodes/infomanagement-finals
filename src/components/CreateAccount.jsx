@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-const CreateAccount = ({ onSwitchMode }) => {
+const CreateAccount = ({ onSwitchMode, onSuccess }) => {
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -19,11 +19,13 @@ const CreateAccount = ({ onSwitchMode }) => {
   const handleSubmit = () => {
     if (formData.email && formData.username && formData.password.length >= 6) {
       console.log('Account created:', formData)
-      setSuccessMessage('Account created successfully!')
+      setSuccessMessage('Account created successfully! Redirecting...')
       setTimeout(() => {
         setSuccessMessage('')
         setFormData({ email: '', username: '', password: '' })
-      }, 2000)
+        // Redirect to customer dashboard
+        if (onSuccess) onSuccess()
+      }, 1500)
     }
   }
 

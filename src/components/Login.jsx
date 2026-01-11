@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-const Login = ({ role, onSwitchMode }) => {
+const Login = ({ role, onSwitchMode, onSuccess }) => {
   const [formData, setFormData] = useState({ identifier: '', password: '' })
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -12,17 +12,23 @@ const Login = ({ role, onSwitchMode }) => {
 
   const handleSubmit = () => {
     if (formData.identifier && formData.password) {
-      console.log('Login submitted for', role || 'user', formData)
+      console.log('Login submitted for', role || 'customer', formData)
       setErrorMessage('')
-      alert(`Successfully logged in${role ? ` as ${role}` : ''}!`)
+      
+      // Simulate successful login
+      const userRole = role || 'customer'
+      alert(`Successfully logged in as ${userRole}!`)
       setFormData({ identifier: '', password: '' })
+      
+      // Redirect based on role
+      if (onSuccess) onSuccess(userRole)
     } else {
       setErrorMessage('Please fill in all fields')
     }
   }
 
   return (
-    <div className="absolute top-1/2 right-8 md:right-24 lg:right-32 transform -translate-y-1/2 bg-white border-2 border-black rounded-lg p-6 w-full max-w-md shadow-lg z-10">
+    <div className="absolute top-1/2 right-8 md:right-24 lg:right-32 transform -translate-y-1/2 bg-white border-2 border-black rounded-lg p-6 w-full max-w-md shadow-lg z-10 animate-slide-in-right">
       {!role && (
         <div className="flex justify-center gap-4 mb-4">
           <button
