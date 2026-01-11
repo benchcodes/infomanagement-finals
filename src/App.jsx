@@ -15,18 +15,30 @@ function App() {
     setMode('login')
   }
 
+  const handleGoHome = () => {
+    setMode('create')
+    setSelectedRole(null)
+  }
+
+  const handleSwitchMode = (newMode, role) => {
+    setMode(newMode)
+    if (role !== undefined) {
+      setSelectedRole(role)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="relative flex-1">
         <Hero />
         {mode === 'create' ? (
-          <CreateAccount onSwitchMode={setMode} />
+          <CreateAccount onSwitchMode={handleSwitchMode} />
         ) : (
-          <Login role={selectedRole} onSwitchMode={setMode} />
+          <Login role={selectedRole} onSwitchMode={handleSwitchMode} />
         )}
       </main>
-      <Footer onSelectRole={handleSelectRole} />
+      <Footer onSelectRole={handleSelectRole} onGoHome={handleGoHome} />
     </div>
   )
 }

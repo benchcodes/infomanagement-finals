@@ -1,23 +1,55 @@
 import React, { useState } from 'react'
 
-const Login = ({ role }) => {
+const Login = ({ role, onSwitchMode }) => {
   const [formData, setFormData] = useState({ identifier: '', password: '' })
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    setErrorMessage('')
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log('Login submitted for', role, formData)
+  const handleSubmit = () => {
+    if (formData.identifier && formData.password) {
+      console.log('Login submitted for', role || 'user', formData)
+      setErrorMessage('')
+      alert(`Successfully logged in${role ? ` as ${role}` : ''}!`)
+      setFormData({ identifier: '', password: '' })
+    } else {
+      setErrorMessage('Please fill in all fields')
+    }
   }
 
   return (
-    <div className="relative md:absolute top-auto md:top-1/2 left-1/2 md:left-auto md:right-24 lg:right-32 transform md:-translate-y-1/2 -translate-x-1/2 md:translate-x-0 bg-white border-2 border-black rounded-lg p-6 w-full max-w-md shadow-lg mx-4 md:mx-0">
-      <h2 className="text-3xl font-bold text-center mb-6">LOG IN{role ? ` — ${role.charAt(0).toUpperCase() + role.slice(1)}` : ''}</h2>
+    <div className="absolute top-1/2 right-8 md:right-24 lg:right-32 transform -translate-y-1/2 bg-white border-2 border-black rounded-lg p-6 w-full max-w-md shadow-lg z-10">
+      {!role && (
+        <div className="flex justify-center gap-4 mb-4">
+          <button
+            onClick={() => onSwitchMode && onSwitchMode('create', null)}
+            className="px-4 py-2 font-semibold rounded-md bg-white text-orange-600 border-2 border-orange-600 hover:bg-orange-50 transition duration-200"
+          >
+            Create Account
+          </button>
+          <button
+            className="px-4 py-2 font-semibold rounded-md bg-orange-600 text-white"
+          >
+            Log In
+          </button>
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-3xl font-bold text-center mb-6">
+        LOG IN{role ? ` — ${role.charAt(0).toUpperCase() + role.slice(1)}` : ''}
+      </h2>
+
+      {errorMessage && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center">
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="space-y-4">
         <input
           type="text"
           name="identifier"
@@ -39,12 +71,18 @@ const Login = ({ role }) => {
         />
 
         <button
-          type="submit"
+          onClick={handleSubmit}
           className="w-full bg-orange-600 text-white font-bold py-3 rounded-lg hover:bg-orange-700 transition duration-200"
         >
           Log In
         </button>
-      </form>
+      </div>
+
+      <div className="mt-4 text-center">
+        <button className="text-sm text-orange-600 hover:underline">
+          Forgot password?
+        </button>
+      </div>
     </div>
   )
 }
