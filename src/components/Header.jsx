@@ -2,7 +2,7 @@ import React from 'react'
 
 const Header = ({ isLoggedIn, onLogout }) => {
   return (
-    <header className="bg-orange-600 text-white px-6 py-4 flex items-center justify-between">
+    <header className="bg-orange-600 text-white px-6 py-4 flex items-center justify-between fixed top-0 left-0 right-0 z-50 shadow-lg">
       <div className="flex items-center gap-3">
         <div className="bg-white rounded-full p-2 w-20 h-20 flex items-center justify-center">
           <img 

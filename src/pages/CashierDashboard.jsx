@@ -2,21 +2,22 @@ import { useState } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useMenu } from '../context/MenuContext'
+import { useReservations } from '../context/ReservationContext'  // Add this
 
 const CashierDashboard = ({ onLogout }) => {
   const { menuItems, addMenuItem, deleteMenuItem } = useMenu()
+  const { getPendingReservations, completeReservation, cancelReservation } = useReservations()  // Add this
+  
   const [newItemName, setNewItemName] = useState('')
-  
-  const [cart, setCart] = useState([
-    { id: 1, name: 'Burger', quantity: 1, price: 5 },
-    { id: 2, name: 'Fries', quantity: 1, price: 5 }
-  ])
-  
+  const [cart, setCart] = useState([])
   const [username, setUsername] = useState('')
   const [customerInfo, setCustomerInfo] = useState({
     name: 'Bench',
-    points: 100
+    points: 120
   })
+  const [showReservations, setShowReservations] = useState(true)
+
+  const pendingReservations = getPendingReservations()  // Get all pending reservations
 
   const addToCart = (item) => {
     const existingItem = cart.find(cartItem => cartItem.name === item.name)
@@ -48,15 +49,74 @@ const CashierDashboard = ({ onLogout }) => {
     }
   }
 
+  const handleCompleteReservation = (id) => {
+    completeReservation(id)
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-      {/* Header */}
+    <div className="min-h-screen flex flex-col bg-gray-100 pt-20">
       <Header isLoggedIn={true} onLogout={onLogout} />
 
-      {/* Main Content */}
       <main className="flex-1 flex p-6 gap-6">
-        {/* Left Section */}
         <aside className="w-96 space-y-6">
+          {/* Reservations Panel - NEW! */}
+          <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md">
+            <div 
+              className="bg-purple-700 text-white px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-purple-800 transition"
+              onClick={() => setShowReservations(!showReservations)}
+            >
+              <h2 className="text-2xl font-bold">
+                RESERVATIONS ({pendingReservations.length})
+              </h2>
+              <span className="text-2xl">{showReservations ? '▼' : '▶'}</span>
+            </div>
+            
+            {showReservations && (
+              <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                {pendingReservations.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No pending reservations</p>
+                ) : (
+                  pendingReservations.map(res => (
+                    <div key={res.id} className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-bold text-lg">{res.itemName}</div>
+                          <div className="text-sm text-gray-600">by {res.customerName}</div>
+                        </div>
+                        <span className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold">
+                          PENDING
+                        </span>
+                      </div>
+                      <div className="text-sm space-y-1 mb-3">
+                        <div>📅 {new Date(res.date).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}</div>
+                        <div>🕐 {res.time}</div>
+                        <div>📦 Qty: {res.quantity}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleCompleteReservation(res.id)}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition"
+                        >
+                          ✓ Complete
+                        </button>
+                        <button
+                          onClick={() => cancelReservation(res.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg transition"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Today's Menu */}
           <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md">
             <div className="bg-orange-700 text-white px-6 py-4 flex items-center justify-between">
@@ -64,7 +124,6 @@ const CashierDashboard = ({ onLogout }) => {
               <span className="text-2xl">▼</span>
             </div>
             
-            {/* Add New Item Form */}
             <div className="px-6 py-4 bg-orange-50 border-b-2 border-gray-300">
               <div className="flex gap-2">
                 <input
@@ -144,7 +203,6 @@ const CashierDashboard = ({ onLogout }) => {
             </div>
             
             <div className="flex-1 flex flex-col">
-              {/* Cart Items */}
               <div className="flex-1 divide-y-2 divide-gray-300">
                 {cart.map((item) => (
                   <div key={item.id} className="px-6 py-5 flex items-center justify-between">
@@ -154,7 +212,6 @@ const CashierDashboard = ({ onLogout }) => {
                 ))}
               </div>
 
-              {/* Total and Checkout */}
               <div className="border-t-2 border-gray-300 p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold">Total</span>
@@ -174,7 +231,6 @@ const CashierDashboard = ({ onLogout }) => {
         </section>
       </main>
 
-      {/* Footer */}
       <Footer showLinks={false} />
     </div>
   )

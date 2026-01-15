@@ -7,6 +7,7 @@ import Footer from './components/Footer'
 import CustomerDashboard from './pages/CustomerDashboard'
 import CashierDashboard from './pages/CashierDashboard'
 import { MenuProvider } from './context/MenuContext'
+import { ReservationProvider } from './context/ReservationContext'  // Add this
 import './App.css'
 
 function App() {
@@ -46,17 +47,17 @@ function App() {
 
   return (
     <MenuProvider>
-      {renderContent()}
+      <ReservationProvider>  {/* Add this wrapper */}
+        {renderContent()}
+      </ReservationProvider>
     </MenuProvider>
   )
 
   function renderContent() {
-    // If logged in as customer, show CustomerDashboard
     if (isLoggedIn && userRole === 'customer') {
       return <CustomerDashboard onLogout={handleGoHome} />
     }
 
-    // If logged in as cashier, show CashierDashboard
     if (isLoggedIn && userRole === 'cashier') {
       return <CashierDashboard onLogout={handleGoHome} />
     }
@@ -78,11 +79,10 @@ function App() {
       )
     }
 
-    // Default landing page
     return (
       <div className="min-h-screen flex flex-col">
         <Header isLoggedIn={false} />
-        <main className="relative flex-1">
+        <main className="relative flex-1 pt-20">
           <Hero />
           {mode === 'create' ? (
             <CreateAccount 
