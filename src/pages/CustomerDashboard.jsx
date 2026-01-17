@@ -1,26 +1,60 @@
+// ============================================
+// CustomerDashboard.jsx - Customer's Main Page
+// ============================================
+// This is the main dashboard for logged-in customers.
+// Features:
+// - View today's menu
+// - Make reservations for food items
+// - See loyalty points
+// - View and cancel their reservations
+// ============================================
+
 import { useState } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useMenu } from '../context/MenuContext'
-import { useReservations } from '../context/ReservationContext'  // Add this
+import { useReservations } from '../context/ReservationContext'
 
-const CustomerDashboard = ({ onLogout }) => {
+// Props:
+// - onLogout: Function to log out and return to landing page
+// - username: The logged-in customer's username
+const CustomerDashboard = ({ onLogout, username }) => {
+  // ----------------------------------------
+  // Context Hooks
+  // ----------------------------------------
+  // Get menu items from MenuContext
   const { menuItems } = useMenu()
-  const { addReservation, cancelReservation, getCustomerReservations } = useReservations()  // Add this
+  // Get reservation functions from ReservationContext
+  const { addReservation, cancelReservation, getCustomerReservations } = useReservations()
   
-  const [customerName] = useState('Bench')
+  // ----------------------------------------
+  // State Variables
+  // ----------------------------------------
+  
+  // Customer's display name (from login or default)
+  const customerName = username || 'Bench'
+  
+  // Loyalty points (starts at 100, +10 per reservation)
   const [loyaltyPoints, setLoyaltyPoints] = useState(100)
   
+  // Reservation form data
   const [reservation, setReservation] = useState({
-    item: '',
-    date: '',
-    quantity: 1,
-    time: ''
+    item: '',       // Selected menu item ID
+    date: '',       // Selected date
+    quantity: 1,    // Number of items
+    time: ''        // Selected time slot
   })
+  
+  // Show success message after making reservation
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const myReservations = getCustomerReservations(customerName)  // Get customer's reservations
+  // Get this customer's reservations from context
+  const myReservations = getCustomerReservations(customerName)
 
+  // ----------------------------------------
+  // Helper: Generate Time Slots
+  // ----------------------------------------
+  // Creates time options from 9:00 AM to 8:30 PM
   const generateTimeSlots = () => {
     const slots = []
     for (let hour = 9; hour <= 20; hour++) {
@@ -30,14 +64,18 @@ const CustomerDashboard = ({ onLogout }) => {
     return slots
   }
 
+  // ----------------------------------------
+  // Helper: Generate Available Dates
+  // ----------------------------------------
+  // Creates date options for the next 14 days
   const generateDates = () => {
     const dates = []
     for (let i = 0; i < 14; i++) {
       const date = new Date()
       date.setDate(date.getDate() + i)
       dates.push({
-        value: date.toISOString().split('T')[0],
-        label: date.toLocaleDateString('en-US', { 
+        value: date.toISOString().split('T')[0],  // YYYY-MM-DD format
+        label: date.toLocaleDateString('en-US', {  // Friendly format
           weekday: 'short', 
           month: 'short', 
           day: 'numeric' 
@@ -47,6 +85,10 @@ const CustomerDashboard = ({ onLogout }) => {
     return dates
   }
 
+  // ----------------------------------------
+  // Handler: Update Reservation Form
+  // ----------------------------------------
+  // Updates a single field in the reservation form
   const handleReservationChange = (field, value) => {
     setReservation(prev => ({
       ...prev,
@@ -54,24 +96,35 @@ const CustomerDashboard = ({ onLogout }) => {
     }))
   }
 
+  // ----------------------------------------
+  // Handler: Submit Reservation
+  // ----------------------------------------
+  // Validates form and creates a new reservation
   const handleReserve = () => {
+    // Validate: All fields must be filled
     if (!reservation.item || !reservation.date || !reservation.time) {
       alert('Please fill in all fields')
       return
     }
 
+    // Get the item name from the ID
     const itemName = menuItems.find(item => item.id === parseInt(reservation.item))?.name
 
+    // Add reservation to context
     addReservation({
       ...reservation,
       itemName,
       customerName
     })
     
+    // Award loyalty points (+10 per reservation)
     setLoyaltyPoints(prev => prev + 10)
+    
+    // Show success message for 3 seconds
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 3000)
 
+    // Reset form
     setReservation({
       item: '',
       date: '',
@@ -80,6 +133,7 @@ const CustomerDashboard = ({ onLogout }) => {
     })
   }
 
+  // Generate options for dropdowns
   const timeSlots = generateTimeSlots()
   const dates = generateDates()
 

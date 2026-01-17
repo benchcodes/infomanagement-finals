@@ -1,46 +1,135 @@
-import { useState } from 'react'
+// ============================================
+// CashierDashboard.jsx - Cashier's Main Page
+// ============================================
+// This is the main dashboard for logged-in cashiers.
+// Features:
+// - View and manage pending reservations
+// - Add items to cart and checkout
+// - Add/delete menu items
+// - Look up customer information and points
+// - View all registered customers
+// ============================================
+
+import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useMenu } from '../context/MenuContext'
-import { useReservations } from '../context/ReservationContext'  // Add this
+import { useReservations } from '../context/ReservationContext'
+import { useUsers } from '../context/UserContext'
 
-const CashierDashboard = ({ onLogout }) => {
+// Props:
+// - onLogout: Function to log out and return to landing page
+// - username: The logged-in cashier's username
+const CashierDashboard = ({ onLogout, username }) => {
+  // ----------------------------------------
+  // Context Hooks
+  // ----------------------------------------
+  // Menu functions: view items, add new items, delete items
   const { menuItems, addMenuItem, deleteMenuItem } = useMenu()
-  const { getPendingReservations, completeReservation, cancelReservation } = useReservations()  // Add this
+  // Reservation functions: view pending, complete, cancel
+  const { getPendingReservations, completeReservation, cancelReservation, getCustomerReservations } = useReservations()
+  // User data: list of all registered customers
+  const { users } = useUsers()
   
+  // ----------------------------------------
+  // State Variables
+  // ----------------------------------------
+  
+  // Input for adding new menu items
   const [newItemName, setNewItemName] = useState('')
+  
+  // Shopping cart items
   const [cart, setCart] = useState([])
-  const [username, setUsername] = useState('')
+  
+  // Customer lookup input
+  const [searchUsername, setSearchUsername] = useState(username || '')
+  
+  // Currently displayed customer info
   const [customerInfo, setCustomerInfo] = useState({
-    name: 'Bench',
-    points: 120
+    name: username || 'Bench',
+    points: 100
   })
+  
+  // Toggle for reservations panel visibility
   const [showReservations, setShowReservations] = useState(true)
 
-  const pendingReservations = getPendingReservations()  // Get all pending reservations
+  // ----------------------------------------
+  // Effect: Sync with username prop
+  // ----------------------------------------
+  // When username changes, update the customer info display
+  useEffect(() => {
+    if (username) {
+      setCustomerInfo(prev => ({ ...prev, name: username }))
+      setSearchUsername(username)
+      // Calculate points based on reservations
+      const reservations = getCustomerReservations ? getCustomerReservations(username) : []
+      const points = reservations.length * 10
+      setCustomerInfo({ name: username, points })
+    }
+  }, [username])
 
+  // ----------------------------------------
+  // Handler: Look Up Customer
+  // ----------------------------------------
+  // Searches for a customer and displays their info/points
+  const handleLookupCustomer = () => {
+    if (!searchUsername) {
+      alert('Please enter a username to look up')
+      return
+    }
+
+    // Calculate points: base 100 + 10 per reservation
+    const reservations = getCustomerReservations ? getCustomerReservations(searchUsername) : []
+    const foundUser = users.find(u => u.username === searchUsername || u.email === searchUsername)
+    const basePoints = foundUser?.points || 100
+    const points = basePoints + (reservations.length * 10)
+
+    setCustomerInfo({ name: searchUsername, points })
+  }
+
+  // Get all pending reservations to display
+  const pendingReservations = getPendingReservations()
+
+  // ----------------------------------------
+  // Handler: Add Item to Cart
+  // ----------------------------------------
+  // Adds a menu item to the shopping cart
+  // If item already exists, increases quantity
   const addToCart = (item) => {
     const existingItem = cart.find(cartItem => cartItem.name === item.name)
     if (existingItem) {
+      // Increase quantity of existing item
       setCart(cart.map(cartItem => 
         cartItem.name === item.name 
           ? { ...cartItem, quantity: cartItem.quantity + 1 }
           : cartItem
       ))
     } else {
+      // Add new item to cart
       setCart([...cart, { id: item.id, name: item.name, quantity: 1, price: 5 }])
     }
   }
 
+  // ----------------------------------------
+  // Helper: Calculate Cart Total
+  // ----------------------------------------
   const calculateTotal = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
   }
 
+  // ----------------------------------------
+  // Handler: Checkout
+  // ----------------------------------------
+  // Completes the order and clears the cart
   const handleCheckout = () => {
     alert('Checkout successful!')
     setCart([])
   }
 
+  // ----------------------------------------
+  // Handler: Add New Menu Item
+  // ----------------------------------------
+  // Adds a new item to the menu
   const handleAddNewItem = () => {
     if (newItemName.trim()) {
       addMenuItem(newItemName.trim())
@@ -49,6 +138,10 @@ const CashierDashboard = ({ onLogout }) => {
     }
   }
 
+  // ----------------------------------------
+  // Handler: Complete Reservation
+  // ----------------------------------------
+  // Marks a reservation as completed
   const handleCompleteReservation = (id) => {
     completeReservation(id)
   }
@@ -176,11 +269,18 @@ const CashierDashboard = ({ onLogout }) => {
                 <label className="text-lg font-medium whitespace-nowrap">Username:</label>
                 <input
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={searchUsername}
+                  onChange={(e) => setSearchUsername(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleLookupCustomer()}
                   className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-600"
                   placeholder=""
                 />
+                <button
+                  onClick={handleLookupCustomer}
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg transition duration-200"
+                >
+                  Lookup
+                </button>
               </div>
               
               {customerInfo && (
@@ -188,6 +288,31 @@ const CashierDashboard = ({ onLogout }) => {
                   <div className="flex items-center justify-between text-lg">
                     <span className="font-medium">{customerInfo.name}</span>
                     <span>Points: <span className="font-bold">{customerInfo.points}</span></span>
+                  </div>
+                </div>
+              )}
+
+              {/* Live customers list */}
+              {users && users.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-2">All Customers</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {users.map(u => (
+                      <div key={u.id} className="flex items-center justify-between text-sm bg-orange-50 p-2 rounded">
+                        <span className="truncate">{u.username || u.email}</span>
+                        <button
+                          onClick={() => {
+                            setSearchUsername(u.username || u.email)
+                            const reservations = getCustomerReservations ? getCustomerReservations(u.username || u.email) : []
+                            const basePoints = u.points || 100
+                            setCustomerInfo({ name: u.username || u.email, points: basePoints + (reservations.length * 10) })
+                          }}
+                          className="text-orange-700 font-semibold ml-2"
+                        >
+                          Select
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
