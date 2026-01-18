@@ -73,7 +73,7 @@ const CreateAccount = ({ onSwitchMode, onSuccess }) => {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 md:absolute md:inset-auto md:top-1/2 md:right-8 lg:right-24 xl:right-32 md:transform md:-translate-y-1/2 md:p-0 z-10">
+    <div className="fixed inset-0 flex items-center justify-center p-4 md:absolute md:inset-auto md:top-1/2 md:right-8 lg:right-24 xl:right-32 md:transform md:-translate-y-1/3 md:p-0 z-10">
       <div className="bg-white border-2 border-black rounded-lg p-4 sm:p-6 w-full max-w-sm sm:max-w-md shadow-lg animate-slide-in-right">
       <div className="flex justify-center gap-2 sm:gap-4 mb-4">
         <button

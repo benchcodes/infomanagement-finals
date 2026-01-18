@@ -1,5 +1,5 @@
 // ============================================
-// CashierDashboard.jsx - Cashier's Main Page
+// CashierDashboard.jsx - Cashier's Main Page - FULLY FIXED
 // ============================================
 // This is the main dashboard for logged-in cashiers.
 // Features:
@@ -8,9 +8,11 @@
 // - Add/delete menu items
 // - Look up customer information and points
 // - View all registered customers
+// NO DEFAULT CUSTOMER - starts empty
+// NO AUTO-FILL from login
 // ============================================
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useMenu } from '../context/MenuContext'
@@ -19,117 +21,83 @@ import { useUsers } from '../context/UserContext'
 
 // Props:
 // - onLogout: Function to log out and return to landing page
-// - username: The logged-in cashier's username
+// - username: The logged-in cashier's username (NOT used for customer lookup)
 const CashierDashboard = ({ onLogout, username }) => {
   // ----------------------------------------
   // Context Hooks
   // ----------------------------------------
-  // Menu functions: view items, add new items, delete items
   const { menuItems, addMenuItem, deleteMenuItem } = useMenu()
-  // Reservation functions: view pending, complete, cancel
   const { getPendingReservations, completeReservation, cancelReservation, getCustomerReservations } = useReservations()
-  // User data: list of all registered customers
   const { users } = useUsers()
   
   // ----------------------------------------
-  // State Variables
+  // State Variables - FIXED
   // ----------------------------------------
   
-  // Input for adding new menu items
   const [newItemName, setNewItemName] = useState('')
-  
-  // Shopping cart items
   const [cart, setCart] = useState([])
   
-  // Customer lookup input
-  const [searchUsername, setSearchUsername] = useState(username || '')
+  // Customer lookup input - FIXED: Always starts empty, never uses cashier username
+  const [searchUsername, setSearchUsername] = useState('')
   
-  // Currently displayed customer info
-  const [customerInfo, setCustomerInfo] = useState({
-    name: username || 'Bench',
-    points: 100
-  })
+  // Currently displayed customer info - FIXED: Starts as null
+  const [customerInfo, setCustomerInfo] = useState(null)
   
-  // Toggle for reservations panel visibility
   const [showReservations, setShowReservations] = useState(true)
 
-  // ----------------------------------------
-  // Effect: Sync with username prop
-  // ----------------------------------------
-  // When username changes, update the customer info display
-  useEffect(() => {
-    if (username) {
-      setCustomerInfo(prev => ({ ...prev, name: username }))
-      setSearchUsername(username)
-      // Calculate points based on reservations
-      const reservations = getCustomerReservations ? getCustomerReservations(username) : []
-      const points = reservations.length * 10
-      setCustomerInfo({ name: username, points })
-    }
-  }, [username])
+  // NO useEffect syncing with username prop - this was causing the auto-fill issue
 
   // ----------------------------------------
-  // Handler: Look Up Customer
+  // Handler: Look Up Customer - FIXED
   // ----------------------------------------
-  // Searches for a customer and displays their info/points
   const handleLookupCustomer = () => {
-    if (!searchUsername) {
+    if (!searchUsername.trim()) {
       alert('Please enter a username to look up')
       return
     }
 
-    // Calculate points: base 100 + 10 per reservation
-    const reservations = getCustomerReservations ? getCustomerReservations(searchUsername) : []
-    const foundUser = users.find(u => u.username === searchUsername || u.email === searchUsername)
-    const basePoints = foundUser?.points || 100
+    const foundUser = users.find(u => u.username === searchUsername.trim() || u.email === searchUsername.trim())
+    
+    if (!foundUser) {
+      alert('Customer not found')
+      setCustomerInfo(null)
+      return
+    }
+
+    const reservations = getCustomerReservations ? getCustomerReservations(foundUser.username || foundUser.email) : []
+    const basePoints = foundUser.points || 100
     const points = basePoints + (reservations.length * 10)
 
-    setCustomerInfo({ name: searchUsername, points })
+    setCustomerInfo({ name: foundUser.username || foundUser.email, points })
   }
 
-  // Get all pending reservations to display
   const pendingReservations = getPendingReservations()
 
   // ----------------------------------------
   // Handler: Add Item to Cart
   // ----------------------------------------
-  // Adds a menu item to the shopping cart
-  // If item already exists, increases quantity
   const addToCart = (item) => {
     const existingItem = cart.find(cartItem => cartItem.name === item.name)
     if (existingItem) {
-      // Increase quantity of existing item
       setCart(cart.map(cartItem => 
         cartItem.name === item.name 
           ? { ...cartItem, quantity: cartItem.quantity + 1 }
           : cartItem
       ))
     } else {
-      // Add new item to cart
       setCart([...cart, { id: item.id, name: item.name, quantity: 1, price: 5 }])
     }
   }
 
-  // ----------------------------------------
-  // Helper: Calculate Cart Total
-  // ----------------------------------------
   const calculateTotal = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
   }
 
-  // ----------------------------------------
-  // Handler: Checkout
-  // ----------------------------------------
-  // Completes the order and clears the cart
   const handleCheckout = () => {
     alert('Checkout successful!')
     setCart([])
   }
 
-  // ----------------------------------------
-  // Handler: Add New Menu Item
-  // ----------------------------------------
-  // Adds a new item to the menu
   const handleAddNewItem = () => {
     if (newItemName.trim()) {
       addMenuItem(newItemName.trim())
@@ -138,10 +106,6 @@ const CashierDashboard = ({ onLogout, username }) => {
     }
   }
 
-  // ----------------------------------------
-  // Handler: Complete Reservation
-  // ----------------------------------------
-  // Marks a reservation as completed
   const handleCompleteReservation = (id) => {
     completeReservation(id)
   }
@@ -152,7 +116,7 @@ const CashierDashboard = ({ onLogout, username }) => {
 
       <main className="flex-1 flex p-6 gap-6">
         <aside className="w-96 space-y-6">
-          {/* Reservations Panel - NEW! */}
+          {/* Reservations Panel */}
           <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md">
             <div 
               className="bg-purple-700 text-white px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-purple-800 transition"
@@ -259,32 +223,36 @@ const CashierDashboard = ({ onLogout, username }) => {
             </div>
           </div>
 
-          {/* Customers Section */}
+          {/* Customers Section - FULLY FIXED */}
           <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md">
             <div className="bg-orange-700 text-white px-6 py-4">
               <h2 className="text-2xl font-bold">CUSTOMERS</h2>
             </div>
             <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <label className="text-lg font-medium whitespace-nowrap">Username:</label>
-                <input
-                  type="text"
-                  value={searchUsername}
-                  onChange={(e) => setSearchUsername(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleLookupCustomer()}
-                  className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-600"
-                  placeholder=""
-                />
-                <button
-                  onClick={handleLookupCustomer}
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg transition duration-200"
-                >
-                  Lookup
-                </button>
+              {/* Search bar - FIXED LAYOUT */}
+              <div className="space-y-2">
+                <label className="text-lg font-medium block">Username:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchUsername}
+                    onChange={(e) => setSearchUsername(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleLookupCustomer()}
+                    className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-600"
+                    placeholder="Search customer..."
+                  />
+                  <button
+                    onClick={handleLookupCustomer}
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-2 rounded-lg transition duration-200 whitespace-nowrap"
+                  >
+                    Lookup
+                  </button>
+                </div>
               </div>
               
+              {/* Customer info display - FIXED */}
               {customerInfo && (
-                <div className="pt-4">
+                <div className="pt-4 border-t-2 border-gray-200">
                   <div className="flex items-center justify-between text-lg">
                     <span className="font-medium">{customerInfo.name}</span>
                     <span>Points: <span className="font-bold">{customerInfo.points}</span></span>
@@ -294,20 +262,21 @@ const CashierDashboard = ({ onLogout, username }) => {
 
               {/* Live customers list */}
               {users && users.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-semibold mb-2">All Customers</h4>
+                <div className="mt-4" key={users.length}>
+                  <h4 className="font-semibold mb-2">All Customers ({users.length})</h4>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {users.map(u => (
                       <div key={u.id} className="flex items-center justify-between text-sm bg-orange-50 p-2 rounded">
-                        <span className="truncate">{u.username || u.email}</span>
+                        <span className="truncate flex-1">{u.username || u.email}</span>
                         <button
                           onClick={() => {
-                            setSearchUsername(u.username || u.email)
-                            const reservations = getCustomerReservations ? getCustomerReservations(u.username || u.email) : []
+                            const customerName = u.username || u.email
+                            setSearchUsername(customerName)
+                            const reservations = getCustomerReservations ? getCustomerReservations(customerName) : []
                             const basePoints = u.points || 100
-                            setCustomerInfo({ name: u.username || u.email, points: basePoints + (reservations.length * 10) })
+                            setCustomerInfo({ name: customerName, points: basePoints + (reservations.length * 10) })
                           }}
-                          className="text-orange-700 font-semibold ml-2"
+                          className="text-orange-700 font-semibold ml-2 hover:text-orange-900 transition whitespace-nowrap"
                         >
                           Select
                         </button>
@@ -329,12 +298,18 @@ const CashierDashboard = ({ onLogout, username }) => {
             
             <div className="flex-1 flex flex-col">
               <div className="flex-1 divide-y-2 divide-gray-300">
-                {cart.map((item) => (
-                  <div key={item.id} className="px-6 py-5 flex items-center justify-between">
-                    <span className="text-xl text-gray-700">{item.name}</span>
-                    <span className="text-xl text-gray-700">x{item.quantity}</span>
+                {cart.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-gray-400 text-lg">
+                    Cart is empty
                   </div>
-                ))}
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.id} className="px-6 py-5 flex items-center justify-between">
+                      <span className="text-xl text-gray-700">{item.name}</span>
+                      <span className="text-xl text-gray-700">x{item.quantity}</span>
+                    </div>
+                  ))
+                )}
               </div>
 
               <div className="border-t-2 border-gray-300 p-6 space-y-4">
@@ -345,7 +320,8 @@ const CashierDashboard = ({ onLogout, username }) => {
                 <div className="flex justify-end">
                   <button
                     onClick={handleCheckout}
-                    className="bg-orange-700 hover:bg-orange-800 text-white font-bold px-8 py-3 rounded-lg text-xl transition duration-200"
+                    disabled={cart.length === 0}
+                    className="bg-orange-700 hover:bg-orange-800 text-white font-bold px-8 py-3 rounded-lg text-xl transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     Checkout
                   </button>

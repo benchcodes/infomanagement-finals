@@ -5,7 +5,7 @@
 // It handles:
 // - User authentication (login/logout state)
 // - Navigation between pages (landing, customer, cashier, admin)
-// - Session persistence (stay logged in after refresh)
+// - CLEARS ALL DATA ON REFRESH (no session persistence)
 // ============================================
 
 import { useState } from 'react'
@@ -33,20 +33,14 @@ function App() {
   const [selectedRole, setSelectedRole] = useState(null)
   
   // isLoggedIn: Whether user is currently logged in
-  // Loads from localStorage so user stays logged in after refresh
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('isLoggedIn') === 'true'
-  })
+  // STARTS FALSE ON EVERY REFRESH (no persistence)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   
   // userRole: The role of the logged-in user ('customer', 'cashier', 'admin')
-  const [userRole, setUserRole] = useState(() => {
-    return localStorage.getItem('userRole') || null
-  })
+  const [userRole, setUserRole] = useState(null)
   
   // currentUsername: The username of the logged-in user (shown in "Welcome, ___!")
-  const [currentUsername, setCurrentUsername] = useState(() => {
-    return localStorage.getItem('currentUsername') || null
-  })
+  const [currentUsername, setCurrentUsername] = useState(null)
 
   // ----------------------------------------
   // Handler: Select Role (from footer)
@@ -62,17 +56,13 @@ function App() {
   // Handler: Logout / Go Home
   // ----------------------------------------
   // Called when user clicks "Logout" button.
-  // Clears all login state and removes from localStorage.
+  // Clears all login state.
   const handleGoHome = () => {
     setMode('create')
     setSelectedRole(null)
     setIsLoggedIn(false)
     setUserRole(null)
     setCurrentUsername(null)
-    // Clear session from localStorage
-    localStorage.removeItem('isLoggedIn')
-    localStorage.removeItem('userRole')
-    localStorage.removeItem('currentUsername')
   }
 
   // ----------------------------------------
@@ -91,30 +81,22 @@ function App() {
   // Handler: Login Success
   // ----------------------------------------
   // Called after successful login.
-  // Saves session to state and localStorage.
+  // Saves session to state (cleared on refresh).
   const handleLoginSuccess = (role, username) => {
     setIsLoggedIn(true)
     setUserRole(role)
     setCurrentUsername(username)
-    // Save session to localStorage (persists after refresh)
-    localStorage.setItem('isLoggedIn', 'true')
-    localStorage.setItem('userRole', role)
-    localStorage.setItem('currentUsername', username)
   }
 
   // ----------------------------------------
   // Handler: Create Account Success
   // ----------------------------------------
   // Called after successful account creation.
-  // Automatically logs in as customer and saves session.
+  // Automatically logs in as customer.
   const handleCreateAccountSuccess = (username) => {
     setIsLoggedIn(true)
     setUserRole('customer')
     setCurrentUsername(username)
-    // Save session to localStorage
-    localStorage.setItem('isLoggedIn', 'true')
-    localStorage.setItem('userRole', 'customer')
-    localStorage.setItem('currentUsername', username)
   }
 
   // ----------------------------------------

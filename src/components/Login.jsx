@@ -1,5 +1,5 @@
 // ============================================
-// Login.jsx - User Login Form
+// Login.jsx - User Login Form - FIXED
 // ============================================
 // This component allows existing users to log in.
 // Users can log in with either their username OR email.
@@ -39,7 +39,7 @@ const Login = ({ role, onSwitchMode, onSuccess }) => {
   }
 
   // ----------------------------------------
-  // Handler: Form Submit (Login)
+  // Handler: Form Submit (Login) - FIXED
   // ----------------------------------------
   const handleSubmit = () => {
     // Validate: Both fields must be filled
@@ -65,21 +65,19 @@ const Login = ({ role, onSwitchMode, onSuccess }) => {
         return
       }
       
-      // Use the stored username for display
-      // (even if they logged in with their email)
+      // FIXED: Use the stored username for display, prioritize username over email
       displayName = user.username || user.email
     }
+    // For cashier/admin, use what they typed as the display name
+    else {
+      displayName = formData.identifier
+    }
     
-    // For cashier/admin: allow login without verification (demo mode)
-    // In a real app, you'd check credentials against a database
-
     // Clear error and form
     setErrorMessage('')
-    alert(`Successfully logged in as ${userRole}!`)
     setFormData({ identifier: '', password: '' })
     
     // Call onSuccess to complete login
-    // This saves session and navigates to the appropriate dashboard
     if (onSuccess) onSuccess(userRole, displayName)
   }
 

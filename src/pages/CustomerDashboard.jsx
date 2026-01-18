@@ -1,19 +1,20 @@
 // ============================================
-// CustomerDashboard.jsx - Customer's Main Page
+// CustomerDashboard.jsx - Customer's Main Page - FIXED
 // ============================================
 // This is the main dashboard for logged-in customers.
 // Features:
 // - View today's menu
 // - Make reservations for food items
-// - See loyalty points
+// - See loyalty points (PERSISTENT - saved in UserContext)
 // - View and cancel their reservations
 // ============================================
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useMenu } from '../context/MenuContext'
 import { useReservations } from '../context/ReservationContext'
+import { useUsers } from '../context/UserContext'
 
 // Props:
 // - onLogout: Function to log out and return to landing page
@@ -22,39 +23,46 @@ const CustomerDashboard = ({ onLogout, username }) => {
   // ----------------------------------------
   // Context Hooks
   // ----------------------------------------
-  // Get menu items from MenuContext
   const { menuItems } = useMenu()
-  // Get reservation functions from ReservationContext
   const { addReservation, cancelReservation, getCustomerReservations } = useReservations()
+  const { users, updateUserPoints } = useUsers()
   
   // ----------------------------------------
   // State Variables
   // ----------------------------------------
   
-  // Customer's display name (from login or default)
   const customerName = username || 'Bench'
   
-  // Loyalty points (starts at 100, +10 per reservation)
-  const [loyaltyPoints, setLoyaltyPoints] = useState(100)
-  
-  // Reservation form data
-  const [reservation, setReservation] = useState({
-    item: '',       // Selected menu item ID
-    date: '',       // Selected date
-    quantity: 1,    // Number of items
-    time: ''        // Selected time slot
+  // Loyalty points - FIXED: Load from UserContext
+  const [loyaltyPoints, setLoyaltyPoints] = useState(() => {
+    const user = users.find(u => u.username === customerName || u.email === customerName)
+    return user?.points || 100
   })
   
-  // Show success message after making reservation
+  const [reservation, setReservation] = useState({
+    item: '',
+    date: '',
+    quantity: 1,
+    time: ''
+  })
+  
   const [showSuccess, setShowSuccess] = useState(false)
 
-  // Get this customer's reservations from context
   const myReservations = getCustomerReservations(customerName)
+
+  // ----------------------------------------
+  // Effect: Sync points with UserContext - FIXED
+  // ----------------------------------------
+  useEffect(() => {
+    const user = users.find(u => u.username === customerName || u.email === customerName)
+    if (user) {
+      setLoyaltyPoints(user.points || 100)
+    }
+  }, [users, customerName])
 
   // ----------------------------------------
   // Helper: Generate Time Slots
   // ----------------------------------------
-  // Creates time options from 9:00 AM to 8:30 PM
   const generateTimeSlots = () => {
     const slots = []
     for (let hour = 9; hour <= 20; hour++) {
@@ -67,15 +75,14 @@ const CustomerDashboard = ({ onLogout, username }) => {
   // ----------------------------------------
   // Helper: Generate Available Dates
   // ----------------------------------------
-  // Creates date options for the next 14 days
   const generateDates = () => {
     const dates = []
     for (let i = 0; i < 14; i++) {
       const date = new Date()
       date.setDate(date.getDate() + i)
       dates.push({
-        value: date.toISOString().split('T')[0],  // YYYY-MM-DD format
-        label: date.toLocaleDateString('en-US', {  // Friendly format
+        value: date.toISOString().split('T')[0],
+        label: date.toLocaleDateString('en-US', { 
           weekday: 'short', 
           month: 'short', 
           day: 'numeric' 
@@ -88,7 +95,6 @@ const CustomerDashboard = ({ onLogout, username }) => {
   // ----------------------------------------
   // Handler: Update Reservation Form
   // ----------------------------------------
-  // Updates a single field in the reservation form
   const handleReservationChange = (field, value) => {
     setReservation(prev => ({
       ...prev,
@@ -97,34 +103,34 @@ const CustomerDashboard = ({ onLogout, username }) => {
   }
 
   // ----------------------------------------
-  // Handler: Submit Reservation
+  // Handler: Submit Reservation - FIXED
   // ----------------------------------------
-  // Validates form and creates a new reservation
   const handleReserve = () => {
-    // Validate: All fields must be filled
     if (!reservation.item || !reservation.date || !reservation.time) {
       alert('Please fill in all fields')
       return
     }
 
-    // Get the item name from the ID
     const itemName = menuItems.find(item => item.id === parseInt(reservation.item))?.name
 
-    // Add reservation to context
     addReservation({
       ...reservation,
       itemName,
       customerName
     })
     
-    // Award loyalty points (+10 per reservation)
-    setLoyaltyPoints(prev => prev + 10)
+    // Award loyalty points and save to UserContext
+    const newPoints = loyaltyPoints + 10
+    setLoyaltyPoints(newPoints)
     
-    // Show success message for 3 seconds
+    // Update points in UserContext so they persist
+    if (updateUserPoints) {
+      updateUserPoints(customerName, newPoints)
+    }
+    
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 3000)
 
-    // Reset form
     setReservation({
       item: '',
       date: '',
@@ -133,7 +139,6 @@ const CustomerDashboard = ({ onLogout, username }) => {
     })
   }
 
-  // Generate options for dropdowns
   const timeSlots = generateTimeSlots()
   const dates = generateDates()
 
